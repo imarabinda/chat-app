@@ -1,3 +1,6 @@
+export interface ServerTimeStamp {
+  seconds: number;
+}
 export interface ConversationInfo {
   users: string[];
   group?: {
@@ -8,13 +11,13 @@ export interface ConversationInfo {
   };
   isClosed: boolean;
   seen?: Seen;
-  updatedAt: number;
-  createdAt: number;
+  updatedAt: ServerTimeStamp;
+  createdAt: ServerTimeStamp;
   theme: string;
 }
 export interface Seen {
   [key: string]: {
-    seenAt: number;
+    seenAt: ServerTimeStamp;
     messageId: string;
   };
 }
@@ -36,7 +39,7 @@ export interface MessageItem {
     name: string;
     size: number;
   };
-  createdAt: number;
+  createdAt: ServerTimeStamp;
   type: "text" | "image" | "file" | "sticker" | "removed" | "day";
   reactions: {
     [key: string]: number;

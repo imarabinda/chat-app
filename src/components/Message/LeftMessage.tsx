@@ -16,7 +16,7 @@ import ReplyBadge from "../Chat/ReplyBadge";
 import ReplyIcon from "../Icon/ReplyIcon";
 import SpriteRenderer from "../SpriteRenderer";
 import { useAppSelector } from "../../redux/hooks";
-import { ClickAwayListener } from "@mui/material";
+import { ClickAwayListener, Divider } from "@mui/material";
 import { UsersSliceStateType } from "../../redux/common/reducers/UsersSlice";
 
 interface LeftMessageProps {
@@ -38,16 +38,12 @@ const LeftMessage: FC<LeftMessageProps> = ({
 
   const [isImageViewOpened, setIsImageViewOpened] = useState(false);
 
-  const formattedDate = formatDate(
-    message.createdAt ? message.createdAt : Date.now()
-  );
+  const formattedDate = formatDate(message.createdAt);
 
   return (
     <div id={`message-${message.id}`}>
       <div
-        className={`${
-          conversation.users.length === 2 ? "" : ""
-        } -mb-2 flex`}
+        className={`${conversation.users.length === 2 ? "" : ""} -mb-2 flex`}
       >
         {!!message.replyTo && (
           <ReplyBadge messageId={message.replyTo as string} />
@@ -85,29 +81,18 @@ const LeftMessage: FC<LeftMessageProps> = ({
               <div
                 onClick={(e) => e.stopPropagation()}
                 title={formattedDate}
-                className={`bg-dark-lighten rounded-lg p-2 text-white ${
+                className={`rounded-lg bg-dark-lighten p-2 text-white ${
                   conversation.users.length === 2
-                    ? "after:border-dark-lighten relative after:absolute after:right-full after:bottom-[6px] after:border-8 after:border-t-transparent after:border-l-transparent"
+                    ? "relative after:absolute after:right-full after:bottom-[6px] after:border-8 after:border-dark-lighten after:border-t-transparent after:border-l-transparent"
                     : ""
                 }`}
-              >
-                {splitLinkFromMessage(message.content).map((item, index) => (
-                  <Fragment key={index}>
-                    {typeof item === "string" ? (
-                      <span>{item}</span>
-                    ) : (
-                      <a
-                        className="mx-1 inline underline"
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {item.link}
-                      </a>
-                    )}
-                  </Fragment>
-                ))}
-              </div>
+                style={{
+                  wordBreak: "break-all",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: splitLinkFromMessage(message.content || ""),
+                }}
+              ></div>
             )}
           </>
         ) : message.type === "image" ? (
@@ -132,7 +117,10 @@ const LeftMessage: FC<LeftMessageProps> = ({
           <div
             onClick={(e) => e.stopPropagation()}
             title={formattedDate}
-            className="bg-dark-lighten flex items-center gap-2 overflow-hidden rounded-lg py-3 px-5"
+            className="flex items-center gap-2 overflow-hidden rounded-lg bg-dark-lighten py-3 px-5"
+            style={{
+              wordBreak: "break-all",
+            }}
           >
             <FileIcon
               className="h-4 w-4 object-cover"
@@ -168,7 +156,7 @@ const LeftMessage: FC<LeftMessageProps> = ({
           <div
             onClick={(e) => e.stopPropagation()}
             title={formattedDate}
-            className="border-dark-lighten rounded-lg border p-3 text-gray-400"
+            className="rounded-lg border border-dark-lighten p-3 text-gray-400"
           >
             Message has been removed
           </div>

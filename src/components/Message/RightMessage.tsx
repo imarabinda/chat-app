@@ -51,9 +51,7 @@ const RightMessage: FC<RightMessageProps> = ({ message, setReplyInfo }) => {
     );
   };
 
-  const formattedDate = formatDate(
-    message.createdAt ? message.createdAt : Date.now()
-  );
+  const formattedDate = formatDate(message.createdAt);
 
   return (
     <div id={`message-${message.id}`}>
@@ -86,25 +84,14 @@ const RightMessage: FC<RightMessageProps> = ({ message, setReplyInfo }) => {
               <div
                 onClick={(e) => e.stopPropagation()}
                 title={formattedDate}
-                className={`bg-primary after:border-primary relative rounded-lg p-2 text-white after:absolute after:left-full after:bottom-[6px] after:border-8 after:border-t-transparent after:border-r-transparent`}
-              >
-                {splitLinkFromMessage(message.content).map((item, index) => (
-                  <Fragment key={index}>
-                    {typeof item === "string" ? (
-                      <span>{item}</span>
-                    ) : (
-                      <a
-                        className="mx-1 inline underline"
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {item.link}
-                      </a>
-                    )}
-                  </Fragment>
-                ))}
-              </div>
+                className={`relative rounded-lg bg-primary p-2 text-white after:absolute after:left-full after:bottom-[6px] after:border-8 after:border-primary after:border-t-transparent after:border-r-transparent`}
+                style={{
+                  wordBreak: "break-all",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: splitLinkFromMessage(message.content || ""),
+                }}
+              ></div>
             )}
           </>
         ) : message.type === "image" ? (
@@ -129,7 +116,7 @@ const RightMessage: FC<RightMessageProps> = ({ message, setReplyInfo }) => {
           <div
             onClick={(e) => e.stopPropagation()}
             title={formattedDate}
-            className="bg-dark-lighten flex items-center gap-2 overflow-hidden rounded-lg py-3 px-5"
+            className="flex items-center gap-2 overflow-hidden rounded-lg bg-dark-lighten py-3 px-5"
           >
             <FileIcon
               className="h-4 w-4 object-cover"
@@ -165,7 +152,7 @@ const RightMessage: FC<RightMessageProps> = ({ message, setReplyInfo }) => {
           <div
             onClick={(e) => e.stopPropagation()}
             title={formattedDate}
-            className="border-dark-lighten rounded-lg border p-3 text-gray-400"
+            className="rounded-lg border border-dark-lighten p-3 text-gray-400"
           >
             Message has been removed
           </div>

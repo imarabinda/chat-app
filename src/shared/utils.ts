@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 // @ts-ignore
 import lodash from "lodash";
 import moment from "moment";
+import { ServerTimeStamp } from "./types";
 
 export const formatFileName = (name: string) => {
   const splitted = name.split(".");
@@ -26,11 +27,10 @@ export const formatFileSize = (size: number) => {
   }`;
 };
 
-
-export const formatMessageTime = (timestamp:number) => {
-  return moment(timestamp).format("hh:mm A");
+export const formatMessageTime = (timestamp: ServerTimeStamp) => {
+  return null;
 };
-export const formatDateMessageGrouping = (date:string) => {
+export const formatDateMessageGrouping = (date: string) => {
   const momentDate = moment(date, "YYYY-MM-DD");
   const todaysDate = moment(new Date());
   if (momentDate.isSame(todaysDate.startOf("day"), "d")) {
@@ -45,8 +45,11 @@ export const formatDateMessageGrouping = (date:string) => {
   return momentDate.format("LL");
 };
 
-export const formatDate = (timestamp: number) => {
-  const date = new Date(timestamp);
+export const formatDate = (timestamp: ServerTimeStamp) => {
+  const timestampTemp = timestamp?.seconds
+    ? timestamp?.seconds * 1000
+    : Date.now();
+  const date = new Date(timestampTemp);
   const formatter = dayjs(date);
   const now = new Date();
 
@@ -60,23 +63,9 @@ export const formatDate = (timestamp: number) => {
   return formatter.format("DD MMM YYYY h:mm A");
 };
 
-export const splitLinkFromMessage = (message: string) => {
-  const URL_REGEX =
-    /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*)/gm;
-
-  const result = message.split(" ").reduce((acc, item) => {
-    const isURL = URL_REGEX.test(item);
-    if (isURL) acc.push({ link: item });
-    else {
-      if (typeof acc.slice(-1)[0] === "string") {
-        acc = [...acc.slice(0, -1), `${acc.slice(-1)[0]} ${item}`];
-      } else {
-        acc.push(item);
-      }
-    }
-
-    return acc;
-  }, [] as ({ link: string } | string)[]);
-
-  return result;
+export const splitLinkFromMessage = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, (url) => {
+    return `<a target="_blank" href="${url}">${url}</a>`;
+  });
 };

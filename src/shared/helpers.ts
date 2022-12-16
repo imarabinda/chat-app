@@ -9,6 +9,7 @@ import {
   query,
   QueryDocumentSnapshot,
   QuerySnapshot,
+  serverTimestamp,
   setDoc,
   where,
 } from "firebase/firestore";
@@ -18,7 +19,6 @@ import {
   ref as storageRef,
   uploadBytes,
 } from "firebase/storage";
-import { v4 as uuidv4 } from "uuid";
 import {
   onDisconnect,
   onValue,
@@ -85,7 +85,7 @@ export const createConversation = async (
   users = lodash.uniq([...users, currentUser?.uid]);
   const sorted = users?.sort();
   let previousDataExist: QuerySnapshot<DocumentData> | null = null;
-  
+
   if (!isGroup) {
     previousDataExist = await getDocs(
       query(
@@ -96,10 +96,7 @@ export const createConversation = async (
     );
   }
 
-  if (
-    !previousDataExist ||
-    (previousDataExist && previousDataExist.empty)
-  ) {
+  if (!previousDataExist || (previousDataExist && previousDataExist.empty)) {
     const documentRef = doc(
       collection(firestore, FIRESTORE_CONVERSATIONS_COLLECTION)
     );
@@ -250,7 +247,11 @@ function groupedDays(messages: any) {
       .map((doc) => ({ id: doc?.id, ...doc?.data() }))
       //@ts-ignore
       .reduce((acc, el, i) => {
-        const messageDay = moment(new Date(el?.createdAt)).format("YYYY-MM-DD");
+        const messageDay = moment(
+          new Date(
+            el?.createdAt?.seconds ? el?.createdAt?.seconds * 1000 : Date.now()
+          )
+        ).format("YYYY-MM-DD");
         if (acc[messageDay]) {
           return { ...acc, [messageDay]: acc[messageDay].concat([el]) };
         }
@@ -259,7 +260,9 @@ function groupedDays(messages: any) {
   );
 }
 
-export function generateItems(messages: QueryDocumentSnapshot<DocumentData>[]):MessageItem[] {
+export function generateItems(
+  messages: QueryDocumentSnapshot<DocumentData>[]
+): MessageItem[] {
   const days = groupedDays(messages);
   const sortedDays = Object.keys(days)?.sort(
     (x, y) => moment(x, "YYYY-MM-DD").unix() - moment(y, "YYYY-MM-DD").unix()
@@ -268,17 +271,28 @@ export function generateItems(messages: QueryDocumentSnapshot<DocumentData>[]):M
     const sortedMessages = days[date]?.sort(
       (x: any, y: any) =>
         //@ts-ignore
-        moment(new Date(x?.createdAt)).unix() -
-        moment(new Date(y?.createdAt)).unix()
+        moment(
+          new Date(
+            x?.createdAt?.seconds ? x?.createdAt?.seconds * 1000 : Date.now()
+          )
+        ).unix() -
+        moment(
+          new Date(
+            y?.createdAt?.seconds ? y?.createdAt?.seconds * 1000 : Date.now()
+          )
+        ).unix()
     );
     //@ts-ignore
-    return acc?.concat([{ type: "day", content:date, id: date }, ...sortedMessages]);
+    return acc?.concat([
+      { type: "day", content: date, id: date },
+      ...sortedMessages,
+    ]);
   }, []);
   return items;
 }
 
 export const getUtcTime = () => {
-  return moment.utc().unix() * 1000; //in milliseconds;
+  return serverTimestamp(); //in milliseconds;
 };
 
 export const getShortMessageInfo = (data: MessageItem) => {
@@ -294,7 +308,7 @@ export const getShortMessageInfo = (data: MessageItem) => {
       : data?.content;
 
   const seconds = data?.createdAt;
-  const formattedDate = formatDate(seconds ? seconds : getUtcTime());
+  const formattedDate = formatDate(seconds);
 
   return response?.length > 25 - formattedDate?.length
     ? `${response?.slice(0, 25 - formattedDate?.length)}...`

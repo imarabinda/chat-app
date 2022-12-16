@@ -19,7 +19,7 @@ import { useCollectionQuery } from "../../hooks/useCollectionQuery";
 import { useParams } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
 import { generateItems, getUtcTime } from "../../shared/helpers";
-import { formatDate, formatMessageTime } from "../../shared/utils";
+import { formatDate } from "../../shared/utils";
 import { FIRESTORE_CONVERSATIONS_COLLECTION, FIRESTORE_MESSAGES_COLLECTION, MESSAGE_STACK_BY_TIME_DIFFERENCE } from "../../shared/constants";
 import { DateGroup } from "../Message/DateGroup";
 import {
@@ -269,9 +269,7 @@ const ChatView: FC<ChatViewProps> = ({
                                 uid={key}
                                 size={30}
                                 showName={true}
-                                afterTitle={formatDate(
-                                  value?.seenAt ? value?.seenAt : Date.now()
-                                )}
+                                afterTitle={formatDate(value?.seenAt)}
                               />
                             );
                           })}
@@ -286,9 +284,7 @@ const ChatView: FC<ChatViewProps> = ({
                       onClick={setToolTipData(item?.id)}
                     >
                       {messageSeen.slice(0, 3).map(([key, value]) => {
-                        const title = `Seen at ${formatDate(
-                          value?.seenAt ? value?.seenAt : Date.now()
-                        )}`;
+                        const title = `Seen at ${formatDate(value?.seenAt)}`;
 
                         return <AvatarFromId key={key} uid={key} size={14} />;
                       })}

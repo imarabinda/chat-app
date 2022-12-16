@@ -58,7 +58,7 @@ export const useLastMessage = (conversationId: string) => {
             : (snapshot.docs[0].data().content as string);
 
         const seconds = snapshot.docs[0]?.data()?.createdAt;
-        const formattedDate = formatDate(seconds ? seconds : Date.now());
+        const formattedDate = formatDate(seconds);
 
         response =
           response.length > 30 - formattedDate.length
