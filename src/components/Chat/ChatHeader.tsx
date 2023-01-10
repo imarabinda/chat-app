@@ -48,7 +48,7 @@ const ChatHeader: FC<ChatHeaderProps> = ({ conversation }) => {
             <>
               {conversation.users.length === 2 ? (
                 <img
-                  className="h-10 w-10 rounded-full"
+                  className="h-10 w-10 rounded-full object-cover"
                   src={IMAGE_PROXY(filtered?.[0]?.data()?.photoURL)}
                   alt=""
                 />
