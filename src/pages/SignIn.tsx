@@ -1,22 +1,20 @@
 import {
-  AuthProvider,
-  FacebookAuthProvider,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
+  signInWithEmailAndPassword,
+  } from "firebase/auth";
 import { FC, useCallback, useState } from "react";
 import Alert from "../components/Alert";
 import { Navigate } from "react-router-dom";
-import { auth, firestore } from "../shared/firebase";
+import { auth } from "../shared/firebase";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { Box, TextField } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useForm } from "react-hook-form";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { setCurrentUser, UsersSliceStateType } from "../redux/common/reducers/UsersSlice";
-import { FIRESTORE_USERS_COLLECTION } from "../shared/constants";
+import {
+  setCurrentUserId,
+  UsersSliceStateType,
+} from "../redux/common/reducers/UsersSlice";
 
 const SignIn: FC = () => {
   const { redirect } = useQueryParams();
@@ -36,33 +34,11 @@ const SignIn: FC = () => {
 
   const dispatch = useAppDispatch();
 
-  // const handleSignIn = (provider: AuthProvider) => {
-  //   setLoading(true);
-
-  //   signInWithPopup(auth, provider)
-  //     .then((res) => {
-  //       console.log(res.user);
-  //     })
-  //     .catch((err) => {
-  //       setIsAlertOpened(true);
-  //       setError(`Error: ${err.code}`);
-  //     })
-  //     .finally(() => {
-  //       setLoading(false);
-  //     });
-  // };
-
   const emailPasswordLogin = useCallback(() => {
-    handleSubmit(async (data) => {
-      const q = query(
-        collection(firestore, FIRESTORE_USERS_COLLECTION),
-        where("email", "==", data.email),
-        where("password", "==", data.password)
-      );
-      const response = await getDocs(q);
-      if (response.docs.length > 0) {
-        dispatch(setCurrentUser(response.docs[0].data()));
-      }
+    handleSubmit(async ({ email, password }) => {
+      signInWithEmailAndPassword(auth, email, password).then(async (result) => {
+        dispatch(setCurrentUserId(result.user.uid));
+      });
     })();
   }, []);
 

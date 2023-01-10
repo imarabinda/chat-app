@@ -1,7 +1,7 @@
 import { FC, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { auth, firestore } from "./shared/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 import BarWave from "react-cssfx-loading/src/BarWave";
 import Chat from "./pages/Chat";
@@ -12,37 +12,58 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useAppDispatch, useAppSelector } from "./redux/hooks";
 import {
   setCurrentUser,
+  setCurrentUserId,
   UsersSliceStateType,
 } from "./redux/common/reducers/UsersSlice";
 import { FIRESTORE_USERS_COLLECTION } from "./shared/constants";
 import { establishSocketConnection } from "./shared/helpers";
 
 const App: FC = () => {
-  const { currentUser } = useAppSelector<UsersSliceStateType>(
+  const { currentUser, currentUserId } = useAppSelector<UsersSliceStateType>(
     (state) => state.users
   );
   const dispatch = useAppDispatch();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (result) => {
+      if (result?.uid) {
+        dispatch(setCurrentUserId(result?.uid));
+      } else {
+        dispatch(setCurrentUserId(null));
+      }
+    });
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, []);
 
-  // useEffect(() => {
-  //   onAuthStateChanged(auth, (user) => {
-  //     if (user) {
-  //       const userData = {
-  //         uid: user.uid,
-  //         email: user.email,
-  //         displayName: user.displayName,
-  //         photoURL: user.photoURL,
-  //         isSiteAdmin: false,
-  //       };
-  //       dispatch(setCurrentUser(userData));
-  //       setDoc(doc(firestore, FIRESTORE_USERS_COLLECTION, user.uid), userData);
-  //     } else dispatch(setCurrentUser(null));
-  //   });
-  // }, []);
+  useEffect(() => {
+    let unsubscribe = () => {};
+    if (currentUserId) {
+      const q = query(
+        collection(firestore, FIRESTORE_USERS_COLLECTION),
+        where("uid", "==", currentUserId)
+      );
+      unsubscribe = onSnapshot(q, (snapShot) => {
+        if (!snapShot?.empty) {
+          dispatch(setCurrentUser(snapShot?.docs?.[0]?.data?.()));
+        }
+      });
+    } else {
+      dispatch(setCurrentUser(null));
+    }
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [currentUserId]);
 
   useEffect(() => {
     let connection = establishSocketConnection();
     return connection;
-  }, [currentUser?.uid]);
+  }, [currentUserId]);
 
   if (typeof currentUser === "undefined")
     return (

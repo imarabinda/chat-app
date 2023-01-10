@@ -1,5 +1,9 @@
-import { DEFAULT_AVATAR, FIRESTORE_CONVERSATIONS_COLLECTION, IMAGE_PROXY } from "../../shared/constants";
-import { FC, useState, useCallback } from "react";
+import {
+  DEFAULT_AVATAR,
+  FIRESTORE_CONVERSATIONS_COLLECTION,
+  IMAGE_PROXY,
+} from "../../shared/constants";
+import { FC, useState, useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { collection, orderBy, query, where } from "firebase/firestore";
 
@@ -8,16 +12,26 @@ import CreateConversation from "./CreateConversation";
 import SelectConversation from "./SelectConversation";
 import Spin from "react-cssfx-loading/src/Spin";
 import UserInfo from "./UserInfo";
-import { firestore } from "../../shared/firebase";
+import { auth, firestore } from "../../shared/firebase";
 import { useCollectionQuery } from "../../hooks/useCollectionQuery";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { setCurrentUser, UsersSliceStateType } from "../../redux/common/reducers/UsersSlice";
+import {
+  setCurrentUserId,
+  UsersSliceStateType,
+} from "../../redux/common/reducers/UsersSlice";
 import { ClickAwayListener } from "@mui/material";
+import { signOut } from "firebase/auth";
 
 const SideBar: FC = () => {
   const { currentUser } = useAppSelector<UsersSliceStateType>(
     (state) => state.users
   );
+  const isClosedIn = useMemo(() => {
+    if (currentUser?.isSiteAdmin) {
+      return [true, false];
+    }
+    return [false];
+  }, [currentUser?.isSiteAdmin]);
 
   const [isDropdownOpened, setIsDropdownOpened] = useState(false);
   const [createConversationOpened, setCreateConversationOpened] =
@@ -29,14 +43,17 @@ const SideBar: FC = () => {
     query(
       collection(firestore, FIRESTORE_CONVERSATIONS_COLLECTION),
       orderBy("updatedAt", "desc"),
-      where("users", "array-contains", currentUser?.uid)
+      where("users", "array-contains", currentUser?.uid),
+      where("isClosed", "in", isClosedIn)
     )
   );
 
   const location = useLocation();
 
-  const signOut = useCallback(() => {
-    dispatch(setCurrentUser(null));
+  const signOutFromApp = useCallback(() => {
+    signOut(auth).then(() => {
+      dispatch(setCurrentUserId(null));
+    });
   }, []);
 
   return (
@@ -93,7 +110,7 @@ const SideBar: FC = () => {
                     <span className="whitespace-nowrap">Profile</span>
                   </button>
                   <button
-                    onClick={signOut}
+                    onClick={signOutFromApp}
                     className="hover:bg-dark-lighten flex items-center gap-1 px-3 py-1 transition duration-300"
                   >
                     <i className="bx bx-log-out text-xl"></i>
