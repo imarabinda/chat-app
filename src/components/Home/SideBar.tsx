@@ -132,7 +132,9 @@ const SideBar: FC = () => {
           </div>
         ) : data?.empty ? (
           <div className="my-6 flex flex-col items-center justify-center">
-            <p className="text-center">No conversation found</p>
+            <p className="text-center">
+              Looking for something? <b>{currentUser?.displayName}</b>
+            </p>
             <button
               onClick={() => setCreateConversationOpened(true)}
               className="text-primary text-center"

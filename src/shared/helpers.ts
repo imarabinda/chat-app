@@ -169,7 +169,7 @@ export const establishSocketConnection = () => {
 
 export const getUserDatabaseReference = (userId?: string) => {
   if (!userId) {
-    userId = store.getState()?.users?.currentUser?.uid;
+    userId = store.getState()?.users?.currentUserId;
   }
   if (!userId) {
     return undefined;
