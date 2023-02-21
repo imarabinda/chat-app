@@ -20,7 +20,11 @@ import { useParams } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
 import { generateItems, getUtcTime } from "../../shared/helpers";
 import { formatDate } from "../../shared/utils";
-import { FIRESTORE_CONVERSATIONS_COLLECTION, FIRESTORE_MESSAGES_COLLECTION, MESSAGE_STACK_BY_TIME_DIFFERENCE } from "../../shared/constants";
+import {
+  FIRESTORE_CONVERSATIONS_COLLECTION,
+  FIRESTORE_MESSAGES_COLLECTION,
+  MESSAGE_STACK_BY_TIME_DIFFERENCE,
+} from "../../shared/constants";
 import { DateGroup } from "../Message/DateGroup";
 import {
   Box,
@@ -30,6 +34,9 @@ import {
   Typography,
 } from "@mui/material";
 import { UsersSliceStateType } from "../../redux/common/reducers/UsersSlice";
+import { useUsersInfo } from "../../hooks/useUsersInfo";
+import { ConversationsSliceStateType } from "../../redux/common/reducers/ConversationsSlice";
+import TypingUsers from "./TypingUsers";
 
 interface ChatViewProps {
   conversation: ConversationInfo;
@@ -112,7 +119,11 @@ const ChatView: FC<ChatViewProps> = ({
     if (!lastDoc) return;
 
     updateDoc(
-      doc(firestore, FIRESTORE_CONVERSATIONS_COLLECTION, conversationIdRef.current as string),
+      doc(
+        firestore,
+        FIRESTORE_CONVERSATIONS_COLLECTION,
+        conversationIdRef.current as string
+      ),
       {
         [`seen.${currentUser?.uid}`]: {
           messageId: lastDoc.id,
@@ -188,121 +199,130 @@ const ChatView: FC<ChatViewProps> = ({
 
   if (filteredDocs.length === 0) {
     return (
-      <div className="flex-grow">
+      <div className="flex flex-grow flex-col justify-between">
         <p className="mt-4 text-center text-gray-400">
           No message recently. Start chatting now.
         </p>
+        <TypingUsers conversation={conversation} />
       </div>
     );
   }
 
   return (
-    <InfiniteScroll
-      dataLength={data?.size as number}
-      next={() => setLimitCount((prev) => prev + 10)}
-      inverse
-      hasMore={(data?.size as number) >= limitCount}
-      loader={
-        <div className="flex justify-center py-3">
-          <Spin />
+    <>
+      <InfiniteScroll
+        dataLength={data?.size as number}
+        next={() => setLimitCount((prev) => prev + 10)}
+        inverse
+        hasMore={(data?.size as number) >= limitCount}
+        loader={
+          <div className="flex justify-center py-3">
+            <Spin />
+          </div>
+        }
+        style={{ display: "flex", flexDirection: "column-reverse" }}
+        height={`calc(100vh - ${144 + inputSectionOffset}px)`}
+      >
+        <div className="flex flex-col items-stretch gap-3 px-8 pt-10 pb-1">
+          {filteredDocs.map((item: MessageItem, index: number) => {
+            // const formattedDate = formatMessageTime(
+            //   item?.createdAt ? item?.createdAt : Date.now()
+            // );
+
+            // let addNewItem = false;
+            // if (filteredDocs?.[index - 1]?.sender !== item?.sender) {
+            //   addNewItem = true;
+            // }
+            // if (
+            //   item?.createdAt - filteredDocs?.[index - 1]?.createdAt >
+            //   MESSAGE_STACK_BY_TIME_DIFFERENCE
+            // ) {
+            //   addNewItem = true;
+            // }
+
+            const messageSeen = Object.entries(conversation?.seen || {}).filter(
+              ([key, value]) =>
+                key !== currentUser?.uid && value?.messageId == item?.id
+            );
+
+            return (
+              <Fragment key={item?.id}>
+                {item?.sender === currentUser?.uid ? (
+                  <RightMessage
+                    replyInfo={replyInfo}
+                    setReplyInfo={setReplyInfo}
+                    message={item}
+                  />
+                ) : item?.type == "day" ? (
+                  <DateGroup item={item} />
+                ) : (
+                  <LeftMessage
+                    replyInfo={replyInfo}
+                    setReplyInfo={setReplyInfo}
+                    message={item}
+                    conversation={conversation}
+                  />
+                )}
+
+                {messageSeen?.length > 0 && (
+                  <MessageSeenBar
+                    justifyContent={"flex-end"}
+                    alignItems={"center"}
+                    direction={"row"}
+                  >
+                    {item?.id && showToolTip?.[item.id] && (
+                      <ClickAwayListener
+                        onClickAway={unsetToolTipData(item.id)}
+                      >
+                        <MessageSeenTooltip>
+                          <Typography className="seen-count">
+                            Read By
+                          </Typography>
+                          <div className="seen-by">
+                            {messageSeen.map(([key, value]) => {
+                              return (
+                                <AvatarFromId
+                                  key={key}
+                                  uid={key}
+                                  size={30}
+                                  showName={true}
+                                  afterTitle={formatDate(value?.seenAt)}
+                                />
+                              );
+                            })}
+                          </div>
+                        </MessageSeenTooltip>
+                      </ClickAwayListener>
+                    )}
+
+                    {item?.id && (
+                      <div
+                        className="message-seen-icons"
+                        onClick={setToolTipData(item?.id)}
+                      >
+                        {messageSeen.slice(0, 3).map(([key, value]) => {
+                          const title = `Seen at ${formatDate(value?.seenAt)}`;
+
+                          return <AvatarFromId key={key} uid={key} size={14} />;
+                        })}
+                        {messageSeen.length > 3 && (
+                          <p className="extra-user-counter">
+                            + {messageSeen.length - 3}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </MessageSeenBar>
+                )}
+              </Fragment>
+            );
+          })}
+          <div ref={scrollBottomRef}></div>
         </div>
-      }
-      style={{ display: "flex", flexDirection: "column-reverse" }}
-      height={`calc(100vh - ${144 + inputSectionOffset}px)`}
-    >
-      <div className="flex flex-col items-stretch gap-3 px-8 pt-10 pb-1">
-        {filteredDocs.map((item: MessageItem, index: number) => {
-          // const formattedDate = formatMessageTime(
-          //   item?.createdAt ? item?.createdAt : Date.now()
-          // );
+      </InfiniteScroll>
 
-          // let addNewItem = false;
-          // if (filteredDocs?.[index - 1]?.sender !== item?.sender) {
-          //   addNewItem = true;
-          // }
-          // if (
-          //   item?.createdAt - filteredDocs?.[index - 1]?.createdAt >
-          //   MESSAGE_STACK_BY_TIME_DIFFERENCE
-          // ) {
-          //   addNewItem = true;
-          // }
-
-          const messageSeen = Object.entries(conversation?.seen || {}).filter(
-            ([key, value]) =>
-              key !== currentUser?.uid && value?.messageId == item?.id
-          );
-
-          return (
-            <Fragment key={item?.id}>
-              {item?.sender === currentUser?.uid ? (
-                <RightMessage
-                  replyInfo={replyInfo}
-                  setReplyInfo={setReplyInfo}
-                  message={item}
-                />
-              ) : item?.type == "day" ? (
-                <DateGroup item={item} />
-              ) : (
-                <LeftMessage
-                  replyInfo={replyInfo}
-                  setReplyInfo={setReplyInfo}
-                  message={item}
-                  conversation={conversation}
-                />
-              )}
-
-              {messageSeen?.length > 0 && (
-                <MessageSeenBar
-                  justifyContent={"flex-end"}
-                  alignItems={"center"}
-                  direction={"row"}
-                >
-                  {item?.id && showToolTip?.[item.id] && (
-                    <ClickAwayListener onClickAway={unsetToolTipData(item.id)}>
-                      <MessageSeenTooltip>
-                        <Typography className="seen-count">Read By</Typography>
-                        <div className="seen-by">
-                          {messageSeen.map(([key, value]) => {
-                            return (
-                              <AvatarFromId
-                                key={key}
-                                uid={key}
-                                size={30}
-                                showName={true}
-                                afterTitle={formatDate(value?.seenAt)}
-                              />
-                            );
-                          })}
-                        </div>
-                      </MessageSeenTooltip>
-                    </ClickAwayListener>
-                  )}
-
-                  {item?.id && (
-                    <div
-                      className="message-seen-icons"
-                      onClick={setToolTipData(item?.id)}
-                    >
-                      {messageSeen.slice(0, 3).map(([key, value]) => {
-                        const title = `Seen at ${formatDate(value?.seenAt)}`;
-
-                        return <AvatarFromId key={key} uid={key} size={14} />;
-                      })}
-                      {messageSeen.length > 3 && (
-                        <p className="extra-user-counter">
-                          + {messageSeen.length - 3}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </MessageSeenBar>
-              )}
-            </Fragment>
-          );
-        })}
-        <div ref={scrollBottomRef}></div>
-      </div>
-    </InfiniteScroll>
+      <TypingUsers conversation={conversation} />
+    </>
   );
 };
 

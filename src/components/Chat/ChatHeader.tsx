@@ -12,6 +12,7 @@ import { useAppSelector } from "../../redux/hooks";
 import { UsersSliceStateType } from "../../redux/common/reducers/UsersSlice";
 import { Stack } from "@mui/material";
 import { ConversationsSliceStateType } from "../../redux/common/reducers/ConversationsSlice";
+import moment from "moment";
 
 interface ChatHeaderProps {
   conversation: ConversationInfo;
@@ -100,6 +101,17 @@ const ChatHeader: FC<ChatHeaderProps> = ({ conversation }) => {
                     }}
                   >
                     Online
+                  </p>
+                )}
+              {conversation.users.length === 2 &&
+                filtered?.[0]?.id &&
+                listeners?.[filtered?.[0]?.id]?.status !== "online" && (
+                  <p
+                    style={{
+                      fontSize: "10px",
+                    }}
+                  >
+                    Last seen at {moment(listeners?.[filtered?.[0]?.id]?.lastSeen).fromNow()}
                   </p>
                 )}
             </Stack>

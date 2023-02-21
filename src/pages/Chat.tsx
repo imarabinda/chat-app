@@ -49,7 +49,7 @@ const Chat: FC = () => {
     return conversation?.users?.filter((user) => {
       return user !== currentUser?.uid;
     });
-  }, [conversation?.users]);
+  }, [JSON.stringify(conversation?.users)]);
 
   //listener
   useEffect(() => {
@@ -69,7 +69,6 @@ const Chat: FC = () => {
         });
       }
     }
-
     //conversation listener
     if (!listeners?.[id]) {
       let convoReference = ref(database, getConversationReference(id));
@@ -83,7 +82,7 @@ const Chat: FC = () => {
       unSubUser();
       unSubConvo();
     };
-  }, [usersOfThisConversation, id]);
+  }, [JSON.stringify(usersOfThisConversation), id]);
 
   useEffect(() => {
     if (conversation?.theme)
@@ -107,9 +106,7 @@ const Chat: FC = () => {
           <div className="flex h-full w-full flex-col items-center justify-center gap-6">
             <img className="h-32 w-32 object-cover" src="/error.svg" alt="" />
             <p className="text-center text-lg">Conversation does not exists</p>
-            <Button onClick={()=> navigate("/")}>
-              Go to home
-            </Button>
+            <Button onClick={() => navigate("/")}>Go to home</Button>
           </div>
         ) : (
           <>
