@@ -43,6 +43,9 @@ const ReplyBadge: FC<ReplyBadgeProps> = ({ messageId }) => {
           else setIsAlertOpened(true);
         }}
         className="cursor-pointer rounded-lg bg-[#4E4F50] p-2 opacity-60"
+        style={{
+          wordBreak: "break-all",
+        }}
       >
         {data?.data()?.type === "text" ? (
           <p>{data?.data()?.content}</p>
