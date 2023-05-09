@@ -62,21 +62,16 @@ const Chat: FC = () => {
       let userId = usersOfThisConversation[0];
 
       //user listener
-      if (!listeners?.[userId]) {
-        let reference = ref(database, getUserDatabaseReference(userId));
-        unSubUser = onValue(reference, (snapShot) => {
-          dispatch(UpdateListeners({ id: userId, data: snapShot.val() }));
-        });
-      }
-    }
-    //conversation listener
-    if (!listeners?.[id]) {
-      let convoReference = ref(database, getConversationReference(id));
-
-      unSubConvo = onValue(convoReference, (snapShot) => {
-        dispatch(UpdateListeners({ id: id, data: snapShot.val() }));
+      let reference = ref(database, getUserDatabaseReference(userId));
+      unSubUser = onValue(reference, (snapShot) => {
+        dispatch(UpdateListeners({ id: userId, data: snapShot.val() }));
       });
     }
+    //conversation listener
+    let convoReference = ref(database, getConversationReference(id));
+    unSubConvo = onValue(convoReference, (snapShot) => {
+      dispatch(UpdateListeners({ id: id, data: snapShot.val() }));
+    });
 
     return () => {
       unSubUser();
@@ -96,7 +91,7 @@ const Chat: FC = () => {
       <div className="flex h-screen flex-grow flex-col items-stretch">
         {loading ? (
           <>
-            <div className="border-dark-lighten h-20 border-b"></div>
+            <div className="h-20 border-b border-dark-lighten"></div>
             <div className="flex-grow"></div>
             <InputSection disabled />
           </>
